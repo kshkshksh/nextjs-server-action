@@ -1,6 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { Todo } from "../components/TodoList";
+import sleep from "./sleep";
+
+// json-server db.json -p 3001 -- --watch
 
 export async function addTodo(data: FormData) {
   const title = data.get("title");
@@ -8,7 +12,7 @@ export async function addTodo(data: FormData) {
   await fetch("http://localhost:3001/todos", {
     method: "POST",
     headers: {
-      "Context-Type": "application/json",
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       userId: 1,
@@ -17,5 +21,37 @@ export async function addTodo(data: FormData) {
     }),
   });
 
+  revalidatePath("/");
+}
+
+export async function deleteTodo(todo: Todo) {
+  const res = await fetch(`http://localhost:3001/todos/${todo.id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: todo.id,
+    }),
+  });
+
+  await res.json();
+  revalidatePath("/");
+}
+
+export async function updateTodo(todo: Todo) {
+  const res = await fetch(`http://localhost:3001/todos/${todo.id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ...todo,
+      completed: !todo.completed,
+    }),
+  });
+
+  await res.json();
+  await sleep(2000);
   revalidatePath("/");
 }
